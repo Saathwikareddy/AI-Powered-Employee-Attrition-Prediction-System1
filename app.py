@@ -34,8 +34,9 @@ st.title("AI Powered Employee Attrition Prediction System")
 # ---------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("WA_Fn-UseC_-HR-Employee-Attrition.csv")
-    return df
+    return pd.read_csv(
+        "WA_Fn-UseC_-HR-Employee-Attrition.csv"
+    )
 
 df = load_data()
 
@@ -46,13 +47,10 @@ st.subheader("Dataset Preview")
 st.dataframe(df.head())
 
 # ---------------------------------------------------
-# DATASET INFORMATION
+# DATASET INFO
 # ---------------------------------------------------
 st.subheader("Dataset Shape")
 st.write(df.shape)
-
-st.subheader("Dataset Columns")
-st.write(df.columns.tolist())
 
 # ---------------------------------------------------
 # ATTRITION RATE
@@ -67,33 +65,7 @@ attrition_rate = (
 st.write(attrition_rate)
 
 # ---------------------------------------------------
-# ATTRITION BY DEPARTMENT
-# ---------------------------------------------------
-st.subheader("Attrition by Department")
-
-department_attrition = (
-    df.groupby('Department')['Attrition']
-    .value_counts(normalize=True)
-    .unstack() * 100
-)
-
-st.dataframe(department_attrition)
-
-# ---------------------------------------------------
-# ATTRITION BY GENDER
-# ---------------------------------------------------
-st.subheader("Attrition by Gender")
-
-gender_attrition = (
-    df.groupby('Gender')['Attrition']
-    .value_counts(normalize=True)
-    .unstack() * 100
-)
-
-st.dataframe(gender_attrition)
-
-# ---------------------------------------------------
-# MONTHLY INCOME BOXPLOT
+# VISUALIZATION
 # ---------------------------------------------------
 st.subheader("Attrition by Monthly Income")
 
@@ -106,63 +78,7 @@ sns.boxplot(
     ax=ax1
 )
 
-ax1.set_title("Monthly Income vs Attrition")
-
 st.pyplot(fig1)
-
-# ---------------------------------------------------
-# JOB LEVEL COUNT PLOT
-# ---------------------------------------------------
-st.subheader("Attrition by Job Level")
-
-fig2, ax2 = plt.subplots(figsize=(10, 6))
-
-sns.countplot(
-    x='JobLevel',
-    hue='Attrition',
-    data=df,
-    ax=ax2
-)
-
-ax2.set_title("Job Level vs Attrition")
-
-st.pyplot(fig2)
-
-# ---------------------------------------------------
-# TOTAL WORKING YEARS BOXPLOT
-# ---------------------------------------------------
-st.subheader("Attrition by Total Working Years")
-
-fig3, ax3 = plt.subplots(figsize=(10, 6))
-
-sns.boxplot(
-    x='Attrition',
-    y='TotalWorkingYears',
-    data=df,
-    ax=ax3
-)
-
-ax3.set_title("Total Working Years vs Attrition")
-
-st.pyplot(fig3)
-
-# ---------------------------------------------------
-# YEARS AT COMPANY BOXPLOT
-# ---------------------------------------------------
-st.subheader("Attrition by Years At Company")
-
-fig4, ax4 = plt.subplots(figsize=(10, 6))
-
-sns.boxplot(
-    x='Attrition',
-    y='YearsAtCompany',
-    data=df,
-    ax=ax4
-)
-
-ax4.set_title("Years At Company vs Attrition")
-
-st.pyplot(fig4)
 
 # ---------------------------------------------------
 # PREPROCESSING
@@ -170,6 +86,12 @@ st.pyplot(fig4)
 st.subheader("Data Preprocessing")
 
 df_model = df.copy()
+
+# Convert target column explicitly
+df_model["Attrition"] = df_model["Attrition"].map({
+    "Yes": 1,
+    "No": 0
+})
 
 # Encode categorical columns
 for col in df_model.columns:
@@ -188,7 +110,7 @@ df_model = df_model.apply(
     errors='coerce'
 )
 
-# Replace NaN values
+# Handle missing values
 df_model = df_model.fillna(0)
 
 # Replace infinite values
@@ -198,21 +120,21 @@ df_model = df_model.replace(
 )
 
 # ---------------------------------------------------
-# FEATURES AND TARGET
+# FEATURES & TARGET
 # ---------------------------------------------------
 X = df_model.drop("Attrition", axis=1)
 y = df_model["Attrition"]
 
-# Convert datatype explicitly
-X = X.astype("float64")
-y = y.astype("int64")
+# Convert datatype
+X = X.astype(float)
+y = y.astype(int)
 
 # ---------------------------------------------------
 # TRAIN TEST SPLIT
 # ---------------------------------------------------
 X_train, X_test, y_train, y_test = train_test_split(
-    X.values,
-    y.values,
+    X,
+    y,
     test_size=0.2,
     random_state=42
 )
@@ -222,7 +144,7 @@ st.success("Preprocessing Completed Successfully")
 # ---------------------------------------------------
 # SIDEBAR MODEL SELECTION
 # ---------------------------------------------------
-st.sidebar.title("Choose Machine Learning Model")
+st.sidebar.title("Choose Model")
 
 model_name = st.sidebar.selectbox(
     "Select Model",
@@ -238,7 +160,7 @@ if model_name == "Logistic Regression":
 
     model = LogisticRegression(
         max_iter=1000,
-        solver='liblinear'
+        solver="liblinear"
     )
 
 else:
@@ -260,7 +182,7 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 
 # ---------------------------------------------------
-# MODEL EVALUATION
+# EVALUATION
 # ---------------------------------------------------
 accuracy = accuracy_score(y_test, y_pred)
 
@@ -282,8 +204,6 @@ f1 = f1_score(
     zero_division=0
 )
 
-cm = confusion_matrix(y_test, y_pred)
-
 # ---------------------------------------------------
 # DISPLAY METRICS
 # ---------------------------------------------------
@@ -297,26 +217,29 @@ st.write(f"F1 Score : {f1:.4f}")
 # ---------------------------------------------------
 # CONFUSION MATRIX
 # ---------------------------------------------------
+cm = confusion_matrix(y_test, y_pred)
+
 st.subheader("Confusion Matrix")
 
-fig5, ax5 = plt.subplots(figsize=(6, 4))
+fig2, ax2 = plt.subplots(figsize=(6, 4))
 
 sns.heatmap(
     cm,
     annot=True,
     fmt='d',
-    ax=ax5
+    cmap='Blues',
+    ax=ax2
 )
 
-ax5.set_xlabel("Predicted")
-ax5.set_ylabel("Actual")
+ax2.set_xlabel("Predicted")
+ax2.set_ylabel("Actual")
 
-st.pyplot(fig5)
+st.pyplot(fig2)
 
 # ---------------------------------------------------
 # FOOTER
 # ---------------------------------------------------
 st.markdown("---")
 st.markdown(
-    "Developed using Streamlit, Pandas, Scikit-Learn and Matplotlib"
+    "Developed using Streamlit and Scikit-Learn"
 )
