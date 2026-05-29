@@ -89,7 +89,7 @@ gender_attrition = (
 st.dataframe(gender_attrition)
 
 # ---------------------------------------------------
-# MONTHLY INCOME PLOT
+# MONTHLY INCOME BOXPLOT
 # ---------------------------------------------------
 st.subheader("Attrition by Monthly Income")
 
@@ -107,7 +107,7 @@ ax1.set_title("Monthly Income vs Attrition")
 st.pyplot(fig1)
 
 # ---------------------------------------------------
-# JOB LEVEL PLOT
+# JOB LEVEL COUNT PLOT
 # ---------------------------------------------------
 st.subheader("Attrition by Job Level")
 
@@ -167,10 +167,13 @@ st.subheader("Data Preprocessing")
 
 df_model = df.copy()
 
-# Encode categorical columns
+# Encode categorical columns safely
 for col in df_model.columns:
 
-    if df_model[col].dtype == 'object':
+    if (
+        df_model[col].dtype == 'object'
+        or str(df_model[col].dtype).startswith("string")
+    ):
 
         le = LabelEncoder()
 
@@ -178,23 +181,29 @@ for col in df_model.columns:
             df_model[col].astype(str)
         )
 
-# Convert boolean columns if any
-bool_cols = df_model.select_dtypes(include=['bool']).columns
-
-for col in bool_cols:
+# Convert boolean columns
+for col in df_model.select_dtypes(include=['bool']).columns:
     df_model[col] = df_model[col].astype(int)
 
-# Convert all data to float
-df_model = df_model.astype(float)
+# Convert remaining columns safely
+for col in df_model.columns:
+    df_model[col] = pd.to_numeric(
+        df_model[col],
+        errors='coerce'
+    )
 
 # Remove missing values
 df_model.dropna(inplace=True)
 
-# Features and Target
+# ---------------------------------------------------
+# FEATURES & TARGET
+# ---------------------------------------------------
 X = df_model.drop("Attrition", axis=1)
 y = df_model["Attrition"]
 
-# Train Test Split
+# ---------------------------------------------------
+# TRAIN TEST SPLIT
+# ---------------------------------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
@@ -215,7 +224,7 @@ model_name = st.sidebar.selectbox(
 )
 
 # ---------------------------------------------------
-# LOGISTIC REGRESSION MODEL
+# LOGISTIC REGRESSION
 # ---------------------------------------------------
 if model_name == "Logistic Regression":
 
@@ -226,12 +235,17 @@ if model_name == "Logistic Regression":
         solver='liblinear'
     )
 
-    model.fit(X_train.values, y_train.values)
+    model.fit(
+        X_train.values,
+        y_train.values
+    )
 
-    y_pred = model.predict(X_test.values)
+    y_pred = model.predict(
+        X_test.values
+    )
 
 # ---------------------------------------------------
-# DECISION TREE MODEL
+# DECISION TREE
 # ---------------------------------------------------
 else:
 
@@ -241,9 +255,14 @@ else:
         random_state=42
     )
 
-    model.fit(X_train.values, y_train.values)
+    model.fit(
+        X_train.values,
+        y_train.values
+    )
 
-    y_pred = model.predict(X_test.values)
+    y_pred = model.predict(
+        X_test.values
+    )
 
 # ---------------------------------------------------
 # MODEL EVALUATION
@@ -288,4 +307,6 @@ st.pyplot(fig5)
 # FOOTER
 # ---------------------------------------------------
 st.markdown("---")
-st.markdown("Developed using Streamlit, Pandas, Scikit-Learn and Matplotlib")
+st.markdown(
+    "Developed using Streamlit, Pandas, Scikit-Learn and Matplotlib"
+)
