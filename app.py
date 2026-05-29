@@ -19,9 +19,14 @@ st.title("IBM HR Attrition Analysis")
 # -----------------------------
 # LOAD DATASET
 # -----------------------------
+# -----------------------------
+# LOAD DATASET
+# -----------------------------
 @st.cache_data
+def load_data():
+    return pd.read_csv("WA_Fn-UseC_-HR-Employee-Attrition.csv")
 
-df = pd.read_csv("WA_Fn-UseC_-HR-Employee-Attrition.csv")
+df = load_data()
 
 # -----------------------------
 # SHOW DATA
