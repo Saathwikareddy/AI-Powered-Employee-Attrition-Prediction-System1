@@ -20,7 +20,6 @@ st.title("IBM HR Attrition Analysis")
 # LOAD DATASET
 # -----------------------------
 @st.cache_data
-import pandas as pd
 
 df = pd.read_csv("WA_Fn-UseC_-HR-Employee-Attrition.csv")
 
