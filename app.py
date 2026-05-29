@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -58,7 +59,10 @@ st.write(df.columns.tolist())
 # ---------------------------------------------------
 st.subheader("Attrition Rate")
 
-attrition_rate = df['Attrition'].value_counts(normalize=True) * 100
+attrition_rate = (
+    df['Attrition']
+    .value_counts(normalize=True) * 100
+)
 
 st.write(attrition_rate)
 
@@ -170,10 +174,7 @@ df_model = df.copy()
 # Encode categorical columns
 for col in df_model.columns:
 
-    if (
-        df_model[col].dtype == 'object'
-        or str(df_model[col].dtype).startswith("string")
-    ):
+    if df_model[col].dtype == 'object':
 
         le = LabelEncoder()
 
@@ -181,22 +182,20 @@ for col in df_model.columns:
             df_model[col].astype(str)
         )
 
-# Convert boolean columns
-for col in df_model.select_dtypes(include=['bool']).columns:
-    df_model[col] = df_model[col].astype(int)
+# Convert all columns to numeric
+df_model = df_model.apply(
+    pd.to_numeric,
+    errors='coerce'
+)
 
-# Fill missing values
+# Replace NaN values
 df_model = df_model.fillna(0)
 
-# Convert all columns safely to numeric
-for col in df_model.columns:
-    df_model[col] = pd.to_numeric(
-        df_model[col],
-        errors='coerce'
-    )
-
-# Fill any remaining NaN values
-df_model = df_model.fillna(0)
+# Replace infinite values
+df_model = df_model.replace(
+    [np.inf, -np.inf],
+    0
+)
 
 # ---------------------------------------------------
 # FEATURES AND TARGET
@@ -204,12 +203,16 @@ df_model = df_model.fillna(0)
 X = df_model.drop("Attrition", axis=1)
 y = df_model["Attrition"]
 
+# Convert datatype explicitly
+X = X.astype("float64")
+y = y.astype("int64")
+
 # ---------------------------------------------------
 # TRAIN TEST SPLIT
 # ---------------------------------------------------
 X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
+    X.values,
+    y.values,
     test_size=0.2,
     random_state=42
 )
@@ -227,27 +230,17 @@ model_name = st.sidebar.selectbox(
 )
 
 # ---------------------------------------------------
-# LOGISTIC REGRESSION MODEL
+# MODEL SELECTION
 # ---------------------------------------------------
 if model_name == "Logistic Regression":
 
     st.subheader("Logistic Regression Results")
 
     model = LogisticRegression(
-        max_iter=5000,
+        max_iter=1000,
         solver='liblinear'
     )
 
-    model.fit(
-        X_train,
-        y_train
-    )
-
-    y_pred = model.predict(X_test)
-
-# ---------------------------------------------------
-# DECISION TREE MODEL
-# ---------------------------------------------------
 else:
 
     st.subheader("Decision Tree Results")
@@ -256,26 +249,44 @@ else:
         random_state=42
     )
 
-    model.fit(
-        X_train,
-        y_train
-    )
+# ---------------------------------------------------
+# TRAIN MODEL
+# ---------------------------------------------------
+model.fit(X_train, y_train)
 
-    y_pred = model.predict(X_test)
+# ---------------------------------------------------
+# PREDICTIONS
+# ---------------------------------------------------
+y_pred = model.predict(X_test)
 
 # ---------------------------------------------------
 # MODEL EVALUATION
 # ---------------------------------------------------
 accuracy = accuracy_score(y_test, y_pred)
 
-precision = precision_score(y_test, y_pred)
+precision = precision_score(
+    y_test,
+    y_pred,
+    zero_division=0
+)
 
-recall = recall_score(y_test, y_pred)
+recall = recall_score(
+    y_test,
+    y_pred,
+    zero_division=0
+)
 
-f1 = f1_score(y_test, y_pred)
+f1 = f1_score(
+    y_test,
+    y_pred,
+    zero_division=0
+)
 
 cm = confusion_matrix(y_test, y_pred)
 
+# ---------------------------------------------------
+# DISPLAY METRICS
+# ---------------------------------------------------
 st.subheader("Model Performance")
 
 st.write(f"Accuracy : {accuracy:.4f}")
