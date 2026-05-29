@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import kagglehub
+
 import os
 
 from sklearn.model_selection import train_test_split
@@ -20,18 +20,9 @@ st.title("IBM HR Attrition Analysis")
 # LOAD DATASET
 # -----------------------------
 @st.cache_data
-def load_data():
-    path = kagglehub.dataset_download(
-        "pavansubhasht/ibm-hr-analytics-attrition-dataset"
-    )
+import pandas as pd
 
-    file_name = 'WA_Fn-UseC_-HR-Employee-Attrition.csv'
-    data_path = os.path.join(path, file_name)
-
-    df = pd.read_csv(data_path)
-    return df
-
-df = load_data()
+df = pd.read_csv("WA_Fn-UseC_-HR-Employee-Attrition.csv")
 
 # -----------------------------
 # SHOW DATA
