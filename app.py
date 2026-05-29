@@ -45,7 +45,7 @@ st.subheader("Dataset Preview")
 st.dataframe(df.head())
 
 # ---------------------------------------------------
-# DATASET INFO
+# DATASET INFORMATION
 # ---------------------------------------------------
 st.subheader("Dataset Shape")
 st.write(df.shape)
@@ -125,7 +125,7 @@ ax2.set_title("Job Level vs Attrition")
 st.pyplot(fig2)
 
 # ---------------------------------------------------
-# TOTAL WORKING YEARS
+# TOTAL WORKING YEARS BOXPLOT
 # ---------------------------------------------------
 st.subheader("Attrition by Total Working Years")
 
@@ -143,7 +143,7 @@ ax3.set_title("Total Working Years vs Attrition")
 st.pyplot(fig3)
 
 # ---------------------------------------------------
-# YEARS AT COMPANY
+# YEARS AT COMPANY BOXPLOT
 # ---------------------------------------------------
 st.subheader("Attrition by Years At Company")
 
@@ -167,7 +167,7 @@ st.subheader("Data Preprocessing")
 
 df_model = df.copy()
 
-# Encode categorical columns safely
+# Encode categorical columns
 for col in df_model.columns:
 
     if (
@@ -185,18 +185,21 @@ for col in df_model.columns:
 for col in df_model.select_dtypes(include=['bool']).columns:
     df_model[col] = df_model[col].astype(int)
 
-# Convert remaining columns safely
+# Fill missing values
+df_model = df_model.fillna(0)
+
+# Convert all columns safely to numeric
 for col in df_model.columns:
     df_model[col] = pd.to_numeric(
         df_model[col],
         errors='coerce'
     )
 
-# Remove missing values
-df_model.dropna(inplace=True)
+# Fill any remaining NaN values
+df_model = df_model.fillna(0)
 
 # ---------------------------------------------------
-# FEATURES & TARGET
+# FEATURES AND TARGET
 # ---------------------------------------------------
 X = df_model.drop("Attrition", axis=1)
 y = df_model["Attrition"]
@@ -224,7 +227,7 @@ model_name = st.sidebar.selectbox(
 )
 
 # ---------------------------------------------------
-# LOGISTIC REGRESSION
+# LOGISTIC REGRESSION MODEL
 # ---------------------------------------------------
 if model_name == "Logistic Regression":
 
@@ -236,16 +239,14 @@ if model_name == "Logistic Regression":
     )
 
     model.fit(
-        X_train.values,
-        y_train.values
+        X_train,
+        y_train
     )
 
-    y_pred = model.predict(
-        X_test.values
-    )
+    y_pred = model.predict(X_test)
 
 # ---------------------------------------------------
-# DECISION TREE
+# DECISION TREE MODEL
 # ---------------------------------------------------
 else:
 
@@ -256,13 +257,11 @@ else:
     )
 
     model.fit(
-        X_train.values,
-        y_train.values
+        X_train,
+        y_train
     )
 
-    y_pred = model.predict(
-        X_test.values
-    )
+    y_pred = model.predict(X_test)
 
 # ---------------------------------------------------
 # MODEL EVALUATION
